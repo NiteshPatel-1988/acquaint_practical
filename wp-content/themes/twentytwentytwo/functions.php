@@ -149,3 +149,148 @@ add_action( 'wp_head', 'twentytwentytwo_preload_webfonts' );
 
 // Add block patterns
 require get_template_directory() . '/inc/block-patterns.php';
+
+
+/* Redirect to checkout page */
+
+add_filter( 'woocommerce_add_to_cart_redirect', 'nitesh_redirect_checkout_add_cart' );
+ 
+function nitesh_redirect_checkout_add_cart() {
+   return wc_get_checkout_url();
+}
+
+
+/* Ajax Custom filter code */
+
+add_action('wp_ajax_myfilter', 'custom_filter_function'); // wp_ajax_{ACTION HERE} 
+add_action('wp_ajax_nopriv_myfilter', 'custom_filter_function');
+
+function custom_filter_function(){
+	producthide();
+	$catSlug = $_POST['myproduct'];
+
+	if($catSlug == 'featured'){
+
+		$args = array(
+			'post_type' => 'product',
+			'posts_per_page' => 3,
+			'tax_query' => array(
+					array(
+						'taxonomy' => 'product_visibility',
+						'field'    => 'name',
+						'terms'    => 'featured',
+					),
+				),
+			);
+
+		$loop = new WP_Query( $args );
+		echo '<h2>Featured Products</h2>';
+		echo '<div class="woocommerce">';
+		echo '<ul class="products">';
+		if ( $loop->have_posts() ) {
+			while ( $loop->have_posts() ) : $loop->the_post();
+
+				echo '<div class="col-md-4 response">';
+						do_action('woocommerce_shop_loop');
+						wc_get_template_part( 'content', 'product' ) ; 
+				echo '</div>';
+			endwhile;
+		} else {
+			echo __( 'No products found' );
+		}
+		echo '</ul>'; 
+		echo '</div>';
+		wp_reset_postdata();
+
+}
+elseif($catSlug == 'all'){?>
+     
+	<script>
+		jQuery(function($){
+			$(".default_products #response").addClass("show");
+			$(".show").css("display", "block");
+		});
+    </script>
+<?php  }
+elseif($catSlug == 'popular'){
+	
+	$args = array(
+		'post_type'      => 'product',
+		'posts_per_page' => 6,
+		'orderby'        => 'meta_value_num',
+		'meta_key'       => '_price',
+		//'meta_key'       => 'total_Sales',
+		'order'          => 'desc'
+	);
+	
+	$loop = new WP_Query( $args );
+	echo '<div class="woocommerce">';
+	echo '<ul class="products">';
+	echo '<h2>Popular Products</h2>';
+	if ( $loop->have_posts() ) {
+		while ( $loop->have_posts() ) : $loop->the_post();
+			echo '<div class="col-md-4 response">';
+					do_action('woocommerce_shop_loop');
+					wc_get_template_part( 'content', 'product' ) ; 
+			echo '</div>';			
+		endwhile;
+	} else {
+		echo __( 'No products found' );
+	}
+	echo '</ul>'; 
+	  echo '</div>';
+	  wp_reset_postdata();
+	  producthide();	
+}
+elseif($catSlug == 'category'){
+
+	$args = array(
+		'post_type' => 'product',
+		'posts_per_page' => 3,
+		'tax_query' => array(
+				array(
+					'taxonomy' => 'product_cat',
+					'field'    => 'slug',
+					'terms'    => array('old','new'),
+					'operator'      => 'IN'
+				),
+			),
+		);
+	
+
+	$loop = new WP_Query( $args );
+	echo '<h2>Categories </h2>';
+	echo '<div class="woocommerce">';
+	echo '<ul class="products">';
+	if ( $loop->have_posts() ) {
+		while ( $loop->have_posts() ) : $loop->the_post();
+
+			echo '<div class="col-md-4 response">';
+			        do_action('woocommerce_shop_loop');
+					wc_get_template_part( 'content', 'product' ) ; 
+			echo '</div>';
+		endwhile;
+	} else {
+		echo __( 'No products found' );
+	}
+	echo '</ul>'; 
+	echo '</div>';
+	wp_reset_postdata();
+	producthide();	
+}
+	else{
+		echo "No products found";
+	}
+}
+
+function producthide(){
+	?>
+	<script>
+		jQuery(function($){
+			$(".default_products #response").addClass("hide");
+			$(".hide").css("display", "none");
+		});
+    </script>
+	<?php
+}
+
